@@ -29,35 +29,35 @@ import java.util.*;
 public class ImgService {
 
     private final UserRepository userRepository;
-    private static final String REGION_NAME = "kr-standard";
-    private static final String ENDPOINT = "https://kr.object.ncloudstorage.com";
-    private static final String ACCESS_KEY = NcpObjectStorageConfig.accessKey;
-    private static final String SECRET_KEY = NcpObjectStorageConfig.secretKey;
+    private final String REGION_NAME = "kr-standard";
+    private final String ENDPOINT = "https://kr.object.ncloudstorage.com";
+    private final String ACCESS_KEY = NcpObjectStorageConfig.accessKey;
+    private final String SECRET_KEY = NcpObjectStorageConfig.secretKey;
 
-    private static final String CHARSET_NAME = "UTF-8";
-    private static final String HMAC_ALGORITHM = "HmacSHA256";
-    private static final String HASH_ALGORITHM = "SHA-256";
-    private static final String AWS_ALGORITHM = "AWS4-HMAC-SHA256";
-    private static final String SERVICE_NAME = "s3";
-    private static final String REQUEST_TYPE = "aws4_request";
-    private static final String UNSIGNED_PAYLOAD = "UNSIGNED-PAYLOAD";
-    private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyyMMdd");
-    private static final SimpleDateFormat TIME_FORMATTER = new SimpleDateFormat("yyyyMMdd\'T\'HHmmss\'Z\'");
+    private final String CHARSET_NAME = "UTF-8";
+    private final String HMAC_ALGORITHM = "HmacSHA256";
+    private final String HASH_ALGORITHM = "SHA-256";
+    private final String AWS_ALGORITHM = "AWS4-HMAC-SHA256";
+    private final String SERVICE_NAME = "s3";
+    private final String REQUEST_TYPE = "aws4_request";
+    private final String UNSIGNED_PAYLOAD = "UNSIGNED-PAYLOAD";
+    private final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyyMMdd");
+    private final SimpleDateFormat TIME_FORMATTER = new SimpleDateFormat("yyyyMMdd\'T\'HHmmss\'Z\'");
 
-    private static byte[] sign(String stringData, byte[] key) throws NoSuchAlgorithmException, UnsupportedEncodingException, InvalidKeyException {
+    private byte[] sign(String stringData, byte[] key) throws NoSuchAlgorithmException, UnsupportedEncodingException, InvalidKeyException {
         byte[] data = stringData.getBytes(CHARSET_NAME);
         Mac e = Mac.getInstance(HMAC_ALGORITHM);
         e.init(new SecretKeySpec(key, HMAC_ALGORITHM));
         return e.doFinal(data);
     }
 
-    private static String hash(String text) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+    private String hash(String text) throws NoSuchAlgorithmException, UnsupportedEncodingException {
         MessageDigest e = MessageDigest.getInstance(HASH_ALGORITHM);
         e.update(text.getBytes(CHARSET_NAME));
         return Hex.encodeHexString(e.digest());
     }
 
-    private static String getStandardizedQueryParameters(String queryString) throws UnsupportedEncodingException {
+    private String getStandardizedQueryParameters(String queryString) throws UnsupportedEncodingException {
         TreeMap<String, String> sortedQueryParameters = new TreeMap<>();
         // sort by key name
         if (queryString != null && !queryString.isEmpty()) {
@@ -91,7 +91,7 @@ public class ImgService {
         return standardizedQueryParametersBuilder.toString();
     }
 
-    private static TreeMap<String, String> getSortedHeaders(Header[] headers) {
+    private TreeMap<String, String> getSortedHeaders(Header[] headers) {
         TreeMap<String, String> sortedHeaders = new TreeMap<>();
         // sort by header name
         for (Header header : headers) {
@@ -101,7 +101,7 @@ public class ImgService {
         return sortedHeaders;
     }
 
-    private static String getSignedHeaders(TreeMap<String, String> sortedHeaders) {
+    private String getSignedHeaders(TreeMap<String, String> sortedHeaders) {
         StringBuilder signedHeadersBuilder = new StringBuilder();
         for (String headerName : sortedHeaders.keySet()) {
             signedHeadersBuilder.append(headerName.toLowerCase()).append(";");
@@ -113,7 +113,7 @@ public class ImgService {
         return s;
     }
 
-    private static String getStandardizedHeaders(TreeMap<String, String> sortedHeaders) {
+    private String getStandardizedHeaders(TreeMap<String, String> sortedHeaders) {
         StringBuilder standardizedHeadersBuilder = new StringBuilder();
         for (String headerName : sortedHeaders.keySet()) {
             standardizedHeadersBuilder.append(headerName.toLowerCase()).append(":").append(sortedHeaders.get(headerName)).append("\n");
@@ -122,7 +122,7 @@ public class ImgService {
         return standardizedHeadersBuilder.toString();
     }
 
-    private static String getCanonicalRequest(HttpUriRequest request, String standardizedQueryParameters, String standardizedHeaders, String signedHeaders) {
+    private String getCanonicalRequest(HttpUriRequest request, String standardizedQueryParameters, String standardizedHeaders, String signedHeaders) {
         StringBuilder canonicalRequestBuilder = new StringBuilder().append(request.getMethod()).append("\n")
                 .append(request.getURI().getPath()).append("\n")
                 .append(standardizedQueryParameters).append("\n")
@@ -133,7 +133,7 @@ public class ImgService {
         return canonicalRequestBuilder.toString();
     }
 
-    private static String getScope(String datestamp, String regionName) {
+    private String getScope(String datestamp, String regionName) {
         StringBuilder scopeBuilder = new StringBuilder().append(datestamp).append("/")
                 .append(regionName).append("/")
                 .append(SERVICE_NAME).append("/")
@@ -141,7 +141,7 @@ public class ImgService {
         return scopeBuilder.toString();
     }
 
-    private static String getStringToSign(String timestamp, String scope, String canonicalRequest) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+    private String getStringToSign(String timestamp, String scope, String canonicalRequest) throws NoSuchAlgorithmException, UnsupportedEncodingException {
         StringBuilder stringToSignBuilder = new StringBuilder(AWS_ALGORITHM)
                 .append("\n")
                 .append(timestamp).append("\n")
@@ -151,7 +151,7 @@ public class ImgService {
         return stringToSignBuilder.toString();
     }
 
-    private static String getSignature(String secretKey, String datestamp, String regionName, String stringToSign) throws NoSuchAlgorithmException, UnsupportedEncodingException, InvalidKeyException {
+    private String getSignature(String secretKey, String datestamp, String regionName, String stringToSign) throws NoSuchAlgorithmException, UnsupportedEncodingException, InvalidKeyException {
         byte[] kSecret = ("AWS4" + secretKey).getBytes(CHARSET_NAME);
         byte[] kDate = sign(datestamp, kSecret);
         byte[] kRegion = sign(regionName, kDate);
@@ -161,7 +161,7 @@ public class ImgService {
         return Hex.encodeHexString(sign(stringToSign, signingKey));
     }
 
-    private static void putObject(String bucketName, String objectName,
+    private void putObject(String bucketName, String objectName,
                                   MultipartFile imgFile) throws IOException {
         HttpClient httpClient = HttpClientBuilder.create().build();
 
@@ -189,7 +189,7 @@ public class ImgService {
         System.out.println("Response : " + response.getStatusLine());
     }
 
-    private static void authorization(HttpUriRequest request, String regionName, String accessKey, String secretKey) throws Exception {
+    private void authorization(HttpUriRequest request, String regionName, String accessKey, String secretKey) throws Exception {
         Date now = new Date();
         DATE_FORMATTER.setTimeZone(TimeZone.getTimeZone("UTC"));
         TIME_FORMATTER.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -222,7 +222,7 @@ public class ImgService {
         request.addHeader("Authorization", authorization);
     }
 
-    private static String getAuthorization(String accessKey, String scope, String signedHeaders, String signature) {
+    private String getAuthorization(String accessKey, String scope, String signedHeaders, String signature) {
         String signingCredentials = accessKey + "/" + scope;
         String credential = "Credential=" + signingCredentials;
         String signerHeaders = "SignedHeaders=" + signedHeaders;
@@ -266,7 +266,7 @@ public class ImgService {
         return imgBytes;
     }
 
-    private static byte[] getObject(String bucketName, String objectName) throws Exception {
+    private byte[] getObject(String bucketName, String objectName) throws Exception {
         HttpClient httpClient = HttpClientBuilder.create().build();
         HttpGet request = new HttpGet(ENDPOINT + "/" + bucketName + "/" + objectName);
         request.addHeader("Host", request.getURI().getHost());
